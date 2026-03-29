@@ -1,0 +1,82 @@
+PROGRAM moveit_7sk_node
+
+  IMPORTS:
+    rclcpp
+    MoveGroupInterface  (for arm and gripper)
+    tf2 euler_to_quaternion converter
+
+  CLASS MoveitApiNode extends rclcpp::Node:
+
+    MEMBERS:
+      move_group_arm
+      move_group_gripper
+      named_poses  (dictionary: string -> joint values)
+
+      service_1: go_to_named_pose
+      service_2: go_to_pose
+      service_3: set_gripper
+      service_4: add_named_pose
+
+    CONSTRUCTOR:
+      init node with name "moveit_7sk_node"
+      load params (velocity_scaling, workspace bounds, etc.)
+
+      create move_group_arm  using "arm"
+      create move_group_gripper  using "gripper"
+
+      apply velocity/acceleration scaling to both
+
+      set workspace bounds on arm
+
+      load named_poses from YAML file if exists
+
+      register all 4 service servers
+
+    CALLBACK go_to_named_pose(request, response):
+      if pose_name not in named_poses AND not in SRDF:
+          response.success = false
+          response.message = "pose not found"
+          return
+
+      move_group_arm.setNamedTarget(request.pose_name)
+      result = move_group_arm.move()
+
+      response.success = (result == SUCCESS)
+      response.message = result description
+
+    CALLBACK go_to_pose(request, response):
+      convert (roll, pitch, yaw) -> quaternion
+      build geometry_msgs::Pose from x,y,z + quaternion
+
+      move_group_arm.setPoseTarget(pose)
+      result = move_group_arm.move()
+
+      response.success = (result == SUCCESS)
+      response.message = result description
+
+    CALLBACK set_gripper(request, response):
+      move_group_gripper.setJointValueTarget(
+          "gripper_left_joint", request.value
+      )
+      result = move_group_gripper.move()
+
+      response.success = (result == SUCCESS)
+      response.message = result description
+
+    CALLBACK add_named_pose(request, response):
+      current_joints = move_group_arm.getCurrentJointValues()
+      named_poses[request.pose_name] = current_joints
+
+      if request.save_to_file:
+          write named_poses to YAML file
+
+      response.success = true
+      response.message = "pose saved"
+
+  MAIN:
+    init rclcpp
+    create executor  (SingleThreadedExecutor)
+    create node
+    add node to executor
+    executor.spin()
+    shutdown rclcpp

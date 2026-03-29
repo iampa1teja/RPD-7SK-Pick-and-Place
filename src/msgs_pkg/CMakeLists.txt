@@ -10,8 +10,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Detection.msg"
   "msg/DetectionArray.msg"
   "msg/MotionStep.msg"
-  "action/MotionSequence.action"
-  "action/PickPlace.action"
+  "msg/Pose.msg"
   DEPENDENCIES geometry_msgs std_msgs
 )
 

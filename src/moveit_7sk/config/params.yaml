@@ -1,0 +1,14 @@
+moveit_7sk_node:
+  ros__parameters:
+    arm_group: "arm"
+    gripper_group: "gripper"
+    velocity_scaling: 1.0
+    acceleration_scaling: 1.0
+    named_poses_file: "named_poses.yaml"
+    workspace:
+      x_min: -1.0
+      x_max:  1.0
+      y_min: -1.0
+      y_max:  1.0
+      z_min:  0.01
+      z_max:  1.5
