@@ -7,12 +7,12 @@ TEST_SEQUENCE = {
     "actions": [
         {
             "type": "pick",
-            "x": 0.2, "y": 0.3, "z": 0.03,
-            "gripper_val": -0.02
+            "x": 0.0, "y": 0.2, "z": 0.04,
+            "gripper_val": -0.01
         },
         {
             "type": "place",
-            "x": -0.2, "y": 0.3, "z": 0.03,
+            "x": 0.0, "y": 0.3, "z": 0.15,
             "gripper_val": 0.02
         }
     ]

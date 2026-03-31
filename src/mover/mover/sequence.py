@@ -33,6 +33,7 @@ class SequenceRunner:
             self.bot.go_to_named_pose('ready')                        and
             self.bot.go_to_pose(x, y, z + approach, r, p, yaw)       and
             self.bot.go_to_pose(x, y, z + grasp, r, p, yaw)          and
+            self._wait(1.0)                                          and 
             self.bot.set_gripper(gripper_val)                         and
             self._wait(0.5)
         )
@@ -48,6 +49,7 @@ class SequenceRunner:
         return (
             self.bot.go_to_pose(x, y, z + approach, r, p, yaw)       and
             self.bot.go_to_pose(x, y, z, r, p, yaw)                   and
+            self._wait(1.0)                                           and 
             self.bot.set_gripper(gripper_val)                         and
             self._wait(0.5)                                            and
             self.bot.go_to_named_pose('ready')

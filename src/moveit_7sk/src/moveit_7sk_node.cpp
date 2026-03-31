@@ -21,8 +21,8 @@ class MoveitAPINode : public rclcpp::Node
 public: 
     MoveitAPINode(): Node("Moveit_api"){
         
-        this->declare_parameter("velocity_scaling", 1.0);
-        this->declare_parameter("acceleration_scaling", 1.0);
+        this->declare_parameter("velocity_scaling", 0.5);
+        this->declare_parameter("acceleration_scaling", 0.5);
         this->declare_parameter("arm_group", std::string("arm"));
         this->declare_parameter("gripper_group", std::string("gripper"));
         this->declare_parameter("named_poses_file", std::string("named_poses.yaml"));

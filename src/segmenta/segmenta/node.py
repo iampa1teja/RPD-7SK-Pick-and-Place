@@ -82,24 +82,24 @@ class SegmentaNode(Node):
         score_thresh = self.get_parameter("score_thresh").get_parameter_value().double_value
         CFG["score_thresh"] = score_thresh
 
-        self.model = Segmenta(CFG).to(DEVICE)
+        self.segmenta_model = Segmenta(CFG).to(DEVICE)
         checkpoint = torch.load(weights_path, map_location=DEVICE, weights_only=True)
-        self.model.load_state_dict(checkpoint["model_state_dict"])
-        self.model.eval() 
+        self.segmenta_model.load_state_dict(checkpoint["model_state_dict"])
+        self.segmenta_model.eval() 
         self.get_logger().info(f"Model loaded on {DEVICE}")
 
         self.fx = self.fy = self.cy = self.cx = None 
         self.create_subscription(
             CameraInfo, 
-            "/intrinsics", 
+            "/camera/camera/color/camera_info", 
             self.camera_info_callback,
             60
         ) 
 
         self.bridge = CvBridge() 
 
-        rgb_sub = message_filters.Subscriber(self, Image, "/rgb") 
-        depth_sub = message_filters.Subscriber(self, Image, "/depth")
+        rgb_sub = message_filters.Subscriber(self, Image, "/camera/camera/color/image_raw") 
+        depth_sub = message_filters.Subscriber(self, Image, "/camera/camera/aligned_depth_to_color/image_raw")
         self.sync = message_filters.ApproximateTimeSynchronizer(
             [rgb_sub, depth_sub], queue_size=10, slop = 0.05
         )
@@ -108,7 +108,7 @@ class SegmentaNode(Node):
         self.det_publisher_ = self.create_publisher(DetectionArray, "/cam_detections", 10)
         self.viz_publisher_ = self.create_publisher(Image, "/detections/viz",10)
 
-        self.get_logger().info("Segmnetation node ready")
+        self.get_logger().info("Segmentation node ready")
         
     def optical_to_camera(self, x, y, z):
         return (
@@ -128,15 +128,22 @@ class SegmentaNode(Node):
         y = (v - self.cy) * depth_m / self.fy 
         z = depth_m 
         return x , y , z 
+
+    def _depth_image_to_meters(self, depth_cv, encoding: str):
+        # RealSense depth is commonly uint16 in millimeters; float encodings are meters.
+        depth_m = depth_cv.astype(np.float32)
+        if encoding == "16UC1":
+            depth_m = depth_m / 1000.0
+        return depth_m
     
     def sync_callback(self, rgb_msg, depth_msg):
         if self.fx is None:
-            self.get_logger().warn("Waiting for camera intrincis...")
+            self.get_logger().warn("Waiting for camera intrinsics...")
             return 
 
         rgb_cv = self.bridge.imgmsg_to_cv2(rgb_msg, desired_encoding="rgb8")
         depth_cv= self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding= "passthrough")
-        depth_m = depth_cv.astype(np.float32) 
+        depth_m = self._depth_image_to_meters(depth_cv, depth_msg.encoding)
 
         overlay = cv2.cvtColor(rgb_cv, cv2.COLOR_RGB2BGR)
         orig_h , orig_w = overlay.shape[:2] 
@@ -149,7 +156,7 @@ class SegmentaNode(Node):
 
         # ── Inference ─────────────────────────────────────────────────────
         with torch.no_grad():
-            instances = self.model.predict(tensor.unsqueeze(0).to(DEVICE))[0]
+            instances = self.segmenta_model.predict(tensor.unsqueeze(0).to(DEVICE))[0]
 
         det_array             = DetectionArray()
         det_array.header      = rgb_msg.header
@@ -169,6 +176,12 @@ class SegmentaNode(Node):
             y1 = int((cy_n - h_n / 2) * orig_h)
             x2 = int((cx_n + w_n / 2) * orig_w)
             y2 = int((cy_n + h_n / 2) * orig_h)
+            x1 = max(0, min(x1, orig_w - 1))
+            y1 = max(0, min(y1, orig_h - 1))
+            x2 = max(0, min(x2, orig_w - 1))
+            y2 = max(0, min(y2, orig_h - 1))
+            if x2 <= x1 or y2 <= y1:
+                continue
             cv2.rectangle(overlay, (x1, y1), (x2, y2), color_bgr, 2)
             cv2.putText(
                 overlay,
@@ -178,6 +191,7 @@ class SegmentaNode(Node):
             )
 
             depth_region = depth_m[mask > 0]
+            depth_region = depth_region[np.isfinite(depth_region)]
             depth_region = depth_region[depth_region > 0]
             if len(depth_region) == 0:
                 continue
@@ -205,7 +219,7 @@ class SegmentaNode(Node):
         viz_msg.header = rgb_msg.header
         self.viz_publisher_.publish(viz_msg)
 
-        self.get_logger().info(f"Published {len(det_array.detections)} detections")
+        self.get_logger().debug(f"Published {len(det_array.detections)} detections")
 
 
 def main(args=None):
