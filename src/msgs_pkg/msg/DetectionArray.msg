@@ -1,2 +1,2 @@
 std_msgs/Header header
-Detection[] detections
+msgs_pkg/Detection[] detections

@@ -22,10 +22,10 @@ class SequenceRunner:
 
     def _pick(self, a):
         x, y, z = a['x'], a['y'], a['z']
-        r   = a.get('roll', -1.57)
+        r   = a.get('roll', 0.0)
         p   = a.get('pitch', 0.0)
         yaw = a.get('yaw', 0.0)
-        approach = a.get('approach_height', 0.15)
+        approach = a.get('approach_height', 0.05)
         grasp    = a.get('grasp_height', 0.1)
         gripper_val = a['gripper_val']
 
@@ -43,7 +43,7 @@ class SequenceRunner:
         r   = a.get('roll', -1.57)
         p   = a.get('pitch', 0.0)
         yaw = a.get('yaw', 0.0)
-        approach    = a.get('approach_height', 0.15)
+        approach    = a.get('approach_height', 0.10)
         gripper_val = a['gripper_val']
 
         return (

@@ -28,6 +28,7 @@ setup(
         'console_scripts': [
             "start = segmenta.node:main",
             "detect = segmenta.transform_sim:main",
+            "cam_sim = segmenta.cam_sim:main",
         ],
     },
 )

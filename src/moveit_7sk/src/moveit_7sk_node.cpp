@@ -75,7 +75,10 @@ public:
 
         move_group_arm_->setPlanningPipelineId("ompl");
         move_group_arm_->setPlannerId("RRTConnect");
-        move_group_arm_->setPlanningTime(10.0);  
+        move_group_arm_->setPlanningTime(10.0);
+        move_group_arm_->setNumPlanningAttempts(100);
+        move_group_arm_->setGoalPositionTolerance(0.005);
+        // move_group_arm_->setGoalOrientationTolerance(1.00);
 
         move_group_arm_->setMaxVelocityScalingFactor(vel_);
         move_group_arm_->setMaxAccelerationScalingFactor(acc_);
@@ -101,17 +104,17 @@ public:
     }   
 
     void go_to_pose_callback(const std::shared_ptr<moveit_7sk::srv::GoToPose::Request> request, std::shared_ptr<moveit_7sk::srv::GoToPose::Response> response){
-        tf2::Quaternion q; 
-        q.setRPY(request->roll, request->pitch, request->yaw); 
+        // tf2::Quaternion q;
+        // q.setRPY(request->roll, request->pitch, request->yaw);
 
-        geometry_msgs::msg::Pose target_pose; 
-        target_pose.position.x = request->x; 
-        target_pose.position.y = request->y; 
-        target_pose.position.z = request->z; 
-        target_pose.orientation = tf2::toMsg(q); 
+        // geometry_msgs::msg::Pose target_pose;
+        // target_pose.position.x = request->x;
+        // target_pose.position.y = request->y;
+        // target_pose.position.z = request->z;
+        // target_pose.orientation = tf2::toMsg(q);
 
-        move_group_arm_->setPoseTarget(target_pose); 
-        
+        // move_group_arm_->setPoseTarget(target_pose); 
+        move_group_arm_->setPositionTarget(request->x, request->y, request->z);
         moveit::planning_interface::MoveGroupInterface::Plan plan; 
         bool success = (move_group_arm_->plan(plan)== moveit::core::MoveItErrorCode::SUCCESS); 
 
