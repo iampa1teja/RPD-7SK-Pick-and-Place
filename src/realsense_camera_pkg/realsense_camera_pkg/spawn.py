@@ -10,17 +10,17 @@ import subprocess
 class SpawnNode(Node): 
     def __init__(self): 
         super().__init__("camera_spawn") 
-        self.declare_parameter('x', 0.0)  
-        self.declare_parameter('y', 0.5) 
-        self.declare_parameter('z', 0.45)
+        self.declare_parameter('x', 0.60)  
+        self.declare_parameter('y', 0.00) 
+        self.declare_parameter('z', 0.10)
 
         x =     self.get_parameter('x').get_parameter_value().double_value
         y =     self.get_parameter('y').get_parameter_value().double_value
         z =     self.get_parameter('z').get_parameter_value().double_value
         
-        self.declare_parameter('roll', 0.0) # 150 degrees 
-        self.declare_parameter('pitch', 0.7854) # assuming 0 
-        self.declare_parameter('yaw', -1.5708) # assuming 0
+        self.declare_parameter('roll', 3.14159) # 150 degrees 
+        self.declare_parameter('pitch', 3.14159) # assuming 0 
+        self.declare_parameter('yaw', 0.0) # assuming 0
 
         roll =  self.get_parameter('roll').get_parameter_value().double_value
         pitch = self.get_parameter('pitch').get_parameter_value().double_value

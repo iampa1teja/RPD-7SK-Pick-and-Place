@@ -91,15 +91,15 @@ class SegmentaNode(Node):
         self.fx = self.fy = self.cy = self.cx = None 
         self.create_subscription(
             CameraInfo, 
-            "/camera/camera/color/camera_info", 
+            "/camera/color/camera_info", 
             self.camera_info_callback,
             60
         ) 
 
         self.bridge = CvBridge() 
 
-        rgb_sub = message_filters.Subscriber(self, Image, "/camera/camera/color/image_raw") 
-        depth_sub = message_filters.Subscriber(self, Image, "/camera/camera/aligned_depth_to_color/image_raw")
+        rgb_sub = message_filters.Subscriber(self, Image, "/rgb") 
+        depth_sub = message_filters.Subscriber(self, Image, "/depth")
         self.sync = message_filters.ApproximateTimeSynchronizer(
             [rgb_sub, depth_sub], queue_size=10, slop = 0.05
         )

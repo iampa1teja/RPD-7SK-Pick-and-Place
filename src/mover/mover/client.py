@@ -17,24 +17,40 @@ class MoveBotClient(Node):
         self.gripper_client.wait_for_service()
         self.get_logger().info('All services ready')
 
+    def _call_service(self, client, request, action_name: str) -> bool:
+        future = client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+
+        result = future.result()
+        if result is None:
+            self.get_logger().error(f'{action_name} failed: no response from service')
+            return False
+
+        if not result.success:
+            message = result.message if hasattr(result, 'message') else ''
+            if message:
+                self.get_logger().error(f'{action_name} failed: {message}')
+            else:
+                self.get_logger().error(f'{action_name} failed')
+            return False
+
+        message = result.message if hasattr(result, 'message') else ''
+        if message:
+            self.get_logger().info(f'{action_name} succeeded: {message}')
+        return True
+
     def go_to_named_pose(self, name: str) -> bool:
         req = GoToNamedPose.Request()
         req.pose_name = name
-        future = self.named_pose_client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-        return future.result().success
+        return self._call_service(self.named_pose_client, req, f'go_to_named_pose({name})')
 
     def go_to_pose(self, x, y, z, r=-1.57, p=0.0, yaw=0.0) -> bool:
         req = GoToPose.Request()
         req.x, req.y, req.z = float(x), float(y), float(z)
         req.roll, req.pitch, req.yaw = float(r), float(p), float(yaw)
-        future = self.pose_client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-        return future.result().success
+        return self._call_service(self.pose_client, req, f'go_to_pose({x}, {y}, {z})')
 
     def set_gripper(self, value: float) -> bool:
         req = SetGripper.Request()
         req.value = float(value)
-        future = self.gripper_client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-        return future.result().success
+        return self._call_service(self.gripper_client, req, f'set_gripper({value})')

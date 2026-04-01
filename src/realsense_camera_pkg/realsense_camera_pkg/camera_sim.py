@@ -16,8 +16,8 @@ class CameraSimNode(Node):
         self.get_logger().info("Bridge started, waiting for topics...")
         time.sleep(2.0)  
         
-        self.rgb_subscriber_ = self.create_subscription(Image , "/camera/camera/color/image_raw",self.rgb_callback,60) 
-        self.depth_subscriber_ = self.create_subscription(Image, "/camera/camera/depth/image_rect_raw",self.depth_callback,60)  
+        self.rgb_subscriber_ = self.create_subscription(Image , "/camera/color/image_raw",self.rgb_callback,60) 
+        self.depth_subscriber_ = self.create_subscription(Image, "/camera/depth/image_rect_raw",self.depth_callback,60)  
 
         self.rgb_publisher_ = self.create_publisher(Image, "/rgb",60) #supports upto 60 FPS 
         self.depth_publisher_ = self.create_publisher(Image , "/depth", 60) 

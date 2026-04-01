@@ -50,9 +50,9 @@ def main():
     
     # if PLACE_OBJECT not in subscriber.detections:
     #     print(f"Error: {PLACE_OBJECT} not detected")
-    # #     subscriber.destroy_node(
-    # #     rclpy.shutdown()
-    # #     return
+    #     subscriber.destroy_node()
+    #     rclpy.shutdown()
+    #     return
     
     # pick_det = subscriber.detections[PICK_OBJECT][0]
     # place_det = subscriber.detections[PLACE_OBJECT][0]
@@ -64,16 +64,16 @@ def main():
         "actions": [
             {
                 "type": "pick",
-                "x": 0.10,
-                "y": 0.338,
-                "z": 0.5,
-                "gripper_val": -0.01
+                "x": 0.25,
+                "y": 0.10,
+                "z": 0.02,
+                "gripper_val": -0.015
             },
             {
                 "type": "place",
-                "x": -0.10,
-                "y": 0.338,
-                "z": 0.07 + 0.1,  
+                "x": 0.25,
+                "y": -0.10,
+                "z": 0.04,  
                 "gripper_val": 0.02
             }
         ]
