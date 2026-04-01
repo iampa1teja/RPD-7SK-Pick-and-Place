@@ -1,7 +1,7 @@
 import rclpy 
 from rclpy.node import Node
-from sensor_msgs.msg import Image , CameraInfo 
-from msgs_pkg.msg import DetectionArray , Detection
+from sensor_msgs.msg import Image, CameraInfo
+from msgs_pkg.msg import DetectionArray, Detection
 import message_filters
 from pathlib import Path
 import torch 
@@ -10,6 +10,7 @@ from cv_bridge import CvBridge
 from ament_index_python.packages import get_package_share_directory
 from .model import Segmenta 
 import cv2
+from tf_transformations import euler_matrix
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -71,16 +72,34 @@ def resolve_weights_path(weights_path: str) -> str:
         f"Could not find weights file '{weights_path}'. Searched: {searched}"
     )
 
-class SegmentaNode(Node):
+
+class SegmentaSimNode(Node):
     def __init__(self): 
-        super().__init__("detection_node") 
+        super().__init__("detection_sim_node") 
       
         self.declare_parameter("weights_path", "weights/best.pth")
         self.declare_parameter("score_thresh", 0.4)
+        
+        # Camera pose parameters (from spawn.py)
+        self.declare_parameter("camera_x", 0.60)
+        self.declare_parameter("camera_y", 0.00)
+        self.declare_parameter("camera_z", 0.10)
+        self.declare_parameter("camera_roll", 3.14159)
+        self.declare_parameter("camera_pitch", 3.14159)
+        self.declare_parameter("camera_yaw", 0.0)
+        
         weights_path = self.get_parameter("weights_path").get_parameter_value().string_value
         weights_path = resolve_weights_path(weights_path)
         score_thresh = self.get_parameter("score_thresh").get_parameter_value().double_value
         CFG["score_thresh"] = score_thresh
+
+        # Get camera pose
+        self.camera_x = self.get_parameter("camera_x").get_parameter_value().double_value
+        self.camera_y = self.get_parameter("camera_y").get_parameter_value().double_value
+        self.camera_z = self.get_parameter("camera_z").get_parameter_value().double_value
+        self.camera_roll = self.get_parameter("camera_roll").get_parameter_value().double_value
+        self.camera_pitch = self.get_parameter("camera_pitch").get_parameter_value().double_value
+        self.camera_yaw = self.get_parameter("camera_yaw").get_parameter_value().double_value
 
         self.segmenta_model = Segmenta(CFG).to(DEVICE)
         checkpoint = torch.load(weights_path, map_location=DEVICE, weights_only=True)
@@ -98,39 +117,54 @@ class SegmentaNode(Node):
 
         self.bridge = CvBridge() 
 
-        rgb_sub = message_filters.Subscriber(self, Image, "/rgb") 
-        depth_sub = message_filters.Subscriber(self, Image, "/depth")
+        rgb_sub = message_filters.Subscriber(self, Image, "/camera/color/image_raw") 
+        depth_sub = message_filters.Subscriber(self, Image, "/camera/depth/image_rect_raw")
         self.sync = message_filters.ApproximateTimeSynchronizer(
-            [rgb_sub, depth_sub], queue_size=10, slop = 0.05
+            [rgb_sub, depth_sub], queue_size=10, slop=0.05
         )
         self.sync.registerCallback(self.sync_callback)
 
-        self.det_publisher_ = self.create_publisher(DetectionArray, "/cam_detections", 10)
-        self.viz_publisher_ = self.create_publisher(Image, "/detections/viz",10)
+        self.det_publisher_ = self.create_publisher(DetectionArray, "/cam_detections_sim", 10)
+        self.viz_publisher_ = self.create_publisher(Image, "/detections_sim/viz", 10)
 
-        self.get_logger().info("Segmentation node ready")
+        self.get_logger().info("Segmentation simulation node ready")
         
     def optical_to_camera(self, x, y, z):
+        """Transform from optical frame to camera frame"""
         return (
             z,     # forward
             -x,    # left
             -y     # up
         )
 
-    def camera_info_callback(self,msg):
+    def camera_to_world(self, x_cam, y_cam, z_cam):
+        """Transform from camera frame to world frame using camera pose"""
+        # Create transformation matrix from camera pose
+        T_cam = euler_matrix(self.camera_roll, self.camera_pitch, self.camera_yaw)
+        T_cam[:3, 3] = [self.camera_x, self.camera_y, self.camera_z]
+        
+        # Point in camera frame
+        p_cam = np.array([x_cam, y_cam, z_cam, 1.0])
+        
+        # Transform to world frame
+        p_world = T_cam @ p_cam
+        
+        return float(p_world[0]), float(p_world[1]), float(p_world[2])
+
+    def camera_info_callback(self, msg):
         self.fx = msg.k[0]
         self.fy = msg.k[4] 
         self.cx = msg.k[2]
         self.cy = msg.k[5]
     
-    def depth_to_xyz(self, u , v , depth_m):
+    def depth_to_xyz(self, u, v, depth_m):
         x = (u - self.cx) * depth_m / self.fx
         y = (v - self.cy) * depth_m / self.fy 
         z = depth_m 
-        return x , y , z 
+        return x, y, z
 
     def _depth_image_to_meters(self, depth_cv, encoding: str):
-        # RealSense depth is commonly uint16 in millimeters; float encodings are meters.
+        # Gazebo depth is commonly float32 in meters; uint16 encodings are in millimeters.
         depth_m = depth_cv.astype(np.float32)
         if encoding == "16UC1":
             depth_m = depth_m / 1000.0
@@ -142,11 +176,11 @@ class SegmentaNode(Node):
             return 
 
         rgb_cv = self.bridge.imgmsg_to_cv2(rgb_msg, desired_encoding="rgb8")
-        depth_cv= self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding= "passthrough")
+        depth_cv = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding="passthrough")
         depth_m = self._depth_image_to_meters(depth_cv, depth_msg.encoding)
 
         overlay = cv2.cvtColor(rgb_cv, cv2.COLOR_RGB2BGR)
-        orig_h , orig_w = overlay.shape[:2] 
+        orig_h, orig_w = overlay.shape[:2] 
 
         arr    = rgb_cv.astype(np.float32) / 255.0
         tensor = torch.from_numpy(arr).permute(2, 0, 1).float()
@@ -160,7 +194,7 @@ class SegmentaNode(Node):
 
         det_array             = DetectionArray()
         det_array.header      = rgb_msg.header
-        det_array.header.frame_id = "camera_link"
+        det_array.header.frame_id = "world"
 
         for inst in instances:
             cls_id = inst["class"]
@@ -201,16 +235,18 @@ class SegmentaNode(Node):
             u = float(np.median(xs))
             v = float(np.median(ys))
             
+            # Transform: pixel → optical frame → camera frame → world frame
             x_opt, y_opt, z_opt = self.depth_to_xyz(u, v, median_depth)
-            x, y, z = self.optical_to_camera(x_opt, y_opt, z_opt)
+            x_cam, y_cam, z_cam = self.optical_to_camera(x_opt, y_opt, z_opt)
+            x_world, y_world, z_world = self.camera_to_world(x_cam, y_cam, z_cam)
 
             det            = Detection()
             det.class_name = CLASS_NAMES.get(cls_id, "unknown")
             det.class_id   = int(cls_id)
             det.confidence = float(inst["obj_score"] * inst["cls_score"])
-            det.x          = float(x)
-            det.y          = float(y)
-            det.z          = float(z)
+            det.x          = x_world
+            det.y          = y_world
+            det.z          = z_world
             det_array.detections.append(det)
 
         self.det_publisher_.publish(det_array)
@@ -224,7 +260,7 @@ class SegmentaNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = SegmentaNode()
+    node = SegmentaSimNode()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

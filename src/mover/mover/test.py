@@ -42,38 +42,38 @@ def main():
     subscriber = DetectionSubscriber()
     rclpy.spin_once(subscriber, timeout_sec=2.0)
     
-    # if PICK_OBJECT not in subscriber.detections:
-    #     print(f"Error: {PICK_OBJECT} not detected")
-    #     subscriber.destroy_node()
-    #     rclpy.shutdown()
-    #     return
+    if PICK_OBJECT not in subscriber.detections:
+        print(f"Error: {PICK_OBJECT} not detected")
+        subscriber.destroy_node()
+        rclpy.shutdown()
+        return
     
-    # if PLACE_OBJECT not in subscriber.detections:
-    #     print(f"Error: {PLACE_OBJECT} not detected")
-    #     subscriber.destroy_node()
-    #     rclpy.shutdown()
-    #     return
+    if PLACE_OBJECT not in subscriber.detections:
+        print(f"Error: {PLACE_OBJECT} not detected")
+        subscriber.destroy_node()
+        rclpy.shutdown()
+        return
     
-    # pick_det = subscriber.detections[PICK_OBJECT][0]
-    # place_det = subscriber.detections[PLACE_OBJECT][0]
+    pick_det = subscriber.detections[PICK_OBJECT][0]
+    place_det = subscriber.detections[PLACE_OBJECT][0]
     
-    # print(f"Detected {PICK_OBJECT} at ({pick_det['x']:.3f}, {pick_det['y']:.3f}, {pick_det['z']:.3f})")
-    # print(f"Detected {PLACE_OBJECT} at ({place_det['x']:.3f}, {place_det['y']:.3f}, {place_det['z']:.3f})")
-    
+    print(f"Detected {PICK_OBJECT} at ({pick_det['x']:.3f}, {pick_det['y']:.3f}, {pick_det['z']:.3f})")
+    print(f"Detected {PLACE_OBJECT} at ({place_det['x']:.3f}, {place_det['y']:.3f}, {place_det['z']:.3f})")
+
     TEST_SEQUENCE = {
         "actions": [
             {
                 "type": "pick",
-                "x": 0.25,
-                "y": 0.10,
-                "z": 0.02,
+                "x": float(pick_det['x']),
+                "y": float(pick_det['y']-0.01),
+                "z": float(pick_det['z']),
                 "gripper_val": -0.015
             },
             {
                 "type": "place",
-                "x": 0.25,
-                "y": -0.10,
-                "z": 0.04,  
+                "x": float(place_det['x']),
+                "y": float(place_det['y']-0.02),
+                "z": float(place_det['z']),
                 "gripper_val": 0.02
             }
         ]

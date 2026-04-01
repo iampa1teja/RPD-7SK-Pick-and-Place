@@ -14,14 +14,14 @@ class CubeSpawner(Node):
             {
                 "name"  : "red_box",
                 "sdf"   : os.path.join(pkg_share, 'models', 'red_box.sdf'),
-                "x"     : "0.25",   
+                "x"     : "0.20",   
                 "y"     : "-0.10",
                 "z"     : "0.02",   
             },
             {
                 "name"  : "blue_cube",
                 "sdf"   : os.path.join(pkg_share, 'models', 'blue_cube.sdf'),
-                "x"     : "0.25",  
+                "x"     : "0.30",  
                 "y"     : "0.10",
                 "z"     : "0.01",
             },

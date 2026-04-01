@@ -29,6 +29,7 @@ setup(
             "start = segmenta.node:main",
             "detect = segmenta.transform_sim:main",
             "cam_sim = segmenta.cam_sim:main",
+            "sim_detect = segmenta.sim:main"
         ],
     },
 )
