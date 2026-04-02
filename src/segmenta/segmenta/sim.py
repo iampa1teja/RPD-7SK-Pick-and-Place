@@ -23,7 +23,7 @@ CFG = {
     "fpn_layers"    :   3, 
     "img_h"         :   480, 
     "img_w"         :   680,
-    "score_thresh"  :   0.4,
+    "score_thresh"  :   0.5,
     "nms_iou_thresh":   0.8, 
     "max_dets"      :   10, 
 }
