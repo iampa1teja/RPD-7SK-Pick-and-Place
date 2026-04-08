@@ -27,7 +27,7 @@ setup(
     entry_points={
         'console_scripts': [
             "start = segmenta.node:main",
-            "detect = segmenta.transform_sim:main",
+            "detect = segmenta.transform:main",
             "cam_sim = segmenta.cam_sim:main",
             "sim_detect = segmenta.sim:main"
         ],

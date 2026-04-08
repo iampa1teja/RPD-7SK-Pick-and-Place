@@ -75,7 +75,7 @@ class SegmentaNode(Node):
     def __init__(self): 
         super().__init__("detection_node") 
       
-        self.declare_parameter("weights_path", "weights/best.pth")
+        self.declare_parameter("weights_path", "weights/best_model.pth")
         self.declare_parameter("score_thresh", 0.4)
         weights_path = self.get_parameter("weights_path").get_parameter_value().string_value
         weights_path = resolve_weights_path(weights_path)
@@ -91,15 +91,15 @@ class SegmentaNode(Node):
         self.fx = self.fy = self.cy = self.cx = None 
         self.create_subscription(
             CameraInfo, 
-            "/camera/color/camera_info", 
+            "/camera/camera/color/camera_info", 
             self.camera_info_callback,
             60
         ) 
 
         self.bridge = CvBridge() 
 
-        rgb_sub = message_filters.Subscriber(self, Image, "/rgb") 
-        depth_sub = message_filters.Subscriber(self, Image, "/depth")
+        rgb_sub = message_filters.Subscriber(self, Image, "/camera/camera/color/image_raw") 
+        depth_sub = message_filters.Subscriber(self, Image, "/camera/camera/aligned_depth_to_color/image_raw")
         self.sync = message_filters.ApproximateTimeSynchronizer(
             [rgb_sub, depth_sub], queue_size=10, slop = 0.05
         )

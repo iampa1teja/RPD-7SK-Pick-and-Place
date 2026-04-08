@@ -10,7 +10,7 @@ import subprocess
 class SpawnNode(Node): 
     def __init__(self): 
         super().__init__("camera_spawn") 
-        self.declare_parameter('x', 0.60)  
+        self.declare_parameter('x', 0.40)  
         self.declare_parameter('y', 0.00) 
         self.declare_parameter('z', 0.10)
 

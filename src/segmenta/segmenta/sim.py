@@ -77,7 +77,7 @@ class SegmentaSimNode(Node):
     def __init__(self): 
         super().__init__("detection_sim_node") 
       
-        self.declare_parameter("weights_path", "weights/best.pth")
+        self.declare_parameter("weights_path", "weights/best_model.pth")
         self.declare_parameter("score_thresh", 0.4)
         
         # Camera pose parameters (from spawn.py)

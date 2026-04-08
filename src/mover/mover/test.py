@@ -5,20 +5,20 @@ from mover.client import MoveBotClient
 from mover.sequence import SequenceRunner
 
 
-PICK_OBJECT = "blue_cube"  
-PLACE_OBJECT = "red_box"    
+PICK_OBJECT = "red_cube"  
+PLACE_OBJECT = "blue_box"    
 
 class DetectionSubscriber(Node):
     def __init__(self):
         super().__init__('detection_subscriber')
         self.subscription = self.create_subscription(
             DetectionArray,
-            '/cam_detections_sim',
+            '/detections',
             self.detection_callback,
             10
         )
         self.detections = {}
-        self.get_logger().info(f"Subscribed to /cam_detections_sim - Pick: {PICK_OBJECT}, Place: {PLACE_OBJECT}")
+        self.get_logger().info(f"Subscribed to /detections - Pick: {PICK_OBJECT}, Place: {PLACE_OBJECT}")
 
     def detection_callback(self, msg):
         """Store detected objects by class name"""
@@ -65,14 +65,14 @@ def main():
             {
                 "type": "pick",
                 "x": float(pick_det['x']),
-                "y": float(pick_det['y']-0.01),
+                "y": float(pick_det['y']+0.02),
                 "z": float(pick_det['z']),
-                "gripper_val": -0.015
+                "gripper_val": -0.012
             },
             {
                 "type": "place",
                 "x": float(place_det['x']),
-                "y": float(place_det['y']-0.02),
+                "y": float(place_det['y']+0.04),
                 "z": float(place_det['z']),
                 "gripper_val": 0.02
             }

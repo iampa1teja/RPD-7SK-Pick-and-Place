@@ -21,7 +21,7 @@ class CubeSpawner(Node):
             {
                 "name"  : "blue_cube",
                 "sdf"   : os.path.join(pkg_share, 'models', 'blue_cube.sdf'),
-                "x"     : "0.30",  
+                "x"     : "0.20",  
                 "y"     : "0.10",
                 "z"     : "0.01",
             },
